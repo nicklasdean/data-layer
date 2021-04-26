@@ -2,21 +2,25 @@ package com.example.demo.repositories;
 
 import com.example.demo.models.Department;
 import com.example.demo.models.Employee;
+import com.example.demo.utility.DatabaseManager;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EmployeeRepository {
-    private String dbString = "jdbc:mysql://localhost:3306/my_company";
-    private String username = "dean";
-    private String password = "securePassword";
+public class EmployeeRepository implements CRUDRepository<Employee>{
 
-    public List<Employee> getAllEmployees(){
+    @Override
+    public List<Employee> getAll() {
         List<Employee> allEmployees = new ArrayList<Employee>();
+        Connection conn = null;
         try {
-            Connection conn = DriverManager.getConnection(dbString,username,password);
-            PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM departments");
+            conn = DatabaseManager.getConnection();
+
+            conn.setAutoCommit(false);
+
+            PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM employees");
+
             ResultSet resultSet = pstmt.executeQuery();
             while(resultSet.next()){
                 allEmployees.add(new Employee(
@@ -30,9 +34,15 @@ public class EmployeeRepository {
                         resultSet.getInt(8)
                 ));
             }
+            conn.commit();
 
         } catch (SQLException e) {
             e.printStackTrace();
+            try {
+                conn.rollback();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
         }
         System.out.println(allEmployees.size());
         return allEmployees;
